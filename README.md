@@ -4,6 +4,19 @@
 
 A modern React Native app that gamifies domain name discovery with a Tinder-like swipe interface. Find and collect premium domain names with an engaging, addictive user experience.
 
+## 📱 Screenshots
+
+<div align="center">
+  <img src="assets/5.jpg" alt="Domain Search App Screenshot 1" width="250" style="margin: 10px;"/>
+  <img src="assets/4.jpg" alt="Domain Search App Screenshot 2" width="250" style="margin: 10px;"/>
+  <img src="assets/3.jpg" alt="Domain Search App Screenshot 3" width="250" style="margin: 10px;"/>
+</div>
+
+<div align="center">
+  <img src="assets/2.jpg" alt="Domain Search App Screenshot 4" width="250" style="margin: 10px;"/>
+  <img src="assets/1.jpg" alt="Domain Search App Screenshot 5" width="250" style="margin: 10px;"/>
+</div>
+
 ## 📱 Features
 
 ### 🎯 **Core Functionality**
@@ -125,15 +138,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
-## 📱 Screenshots
-
-*Screenshots coming soon - app in active development!*
-
-## 🐛 Known Issues
-
-- Requires tunnel mode for cellular connectivity
-- Limited to Expo SDK 53 compatibility
 
 ## 📄 License
 
