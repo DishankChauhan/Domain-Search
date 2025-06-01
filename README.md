@@ -2,7 +2,7 @@
 
 > **Swipe right to find your perfect domain!**
 
-A modern React Native app that gamifies domain name discovery with a Tinder-like swipe interface. Find and collect premium domain names with an engaging, addictive user experience.
+A modern app that gamifies domain name discovery with a Tinder-like swipe interface. Find and collect premium domain names with an engaging, addictive user experience.
 
 ## 📱 Screenshots
 
