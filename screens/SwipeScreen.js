@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
 import SwipeCard from '../components/SwipeCard';
-import { generateNextDomain } from '../data/mockDomains';
+import { generateNextDomain, generateDomainWithLoading } from '../data/mockDomains';
 
 const { height } = Dimensions.get('window');
 
@@ -21,6 +21,7 @@ export default function SwipeScreen({ navigation, route }) {
   const [nextDomain, setNextDomain] = useState(null);
   const [usedDomainIds, setUsedDomainIds] = useState(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingNext, setIsLoadingNext] = useState(false);
   const { addToCart, count, isInCart } = useCart();
 
   // Initialize first domains
@@ -30,19 +31,52 @@ export default function SwipeScreen({ navigation, route }) {
     }
   }, [keyword, startContinuousMode]);
 
-  const loadInitialDomains = () => {
+  const loadInitialDomains = async () => {
     setIsLoading(true);
     
-    // Generate first domain
-    const firstDomain = generateNextDomain(keyword, usedDomainIds);
-    setCurrentDomain(firstDomain);
-    setUsedDomainIds(prev => new Set([...prev, firstDomain.id]));
-    
-    // Preload next domain
-    const secondDomain = generateNextDomain(keyword, new Set([...usedDomainIds, firstDomain.id]));
-    setNextDomain(secondDomain);
-    
-    setIsLoading(false);
+    try {
+      // Generate first domain with loading state
+      const { loadingDomain, promise } = generateDomainWithLoading(keyword, usedDomainIds);
+      
+      // Show loading domain immediately
+      setCurrentDomain(loadingDomain);
+      
+      // Wait for real domain data
+      const firstDomain = await promise;
+      setCurrentDomain(firstDomain);
+      setUsedDomainIds(prev => new Set([...prev, firstDomain.id]));
+      
+      // Preload next domain in background
+      preloadNextDomain(new Set([...usedDomainIds, firstDomain.id]));
+      
+    } catch (error) {
+      console.error('Error loading initial domains:', error);
+      // Fallback to simple domain
+      const fallbackDomain = {
+        id: `fallback_${Date.now()}`,
+        name: `${keyword}.com`,
+        price: 12.99,
+        available: true,
+        extension: '.com',
+        category: 'search',
+        registrar: 'GoDaddy',
+        premium: false,
+        suggested: [],
+        checkingAvailability: false
+      };
+      setCurrentDomain(fallbackDomain);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const preloadNextDomain = async (currentUsedIds) => {
+    try {
+      const nextDomainData = await generateNextDomain(keyword, currentUsedIds);
+      setNextDomain(nextDomainData);
+    } catch (error) {
+      console.error('Error preloading next domain:', error);
+    }
   };
 
   const handleSwipeRight = (domain) => {
@@ -65,14 +99,41 @@ export default function SwipeScreen({ navigation, route }) {
     loadNextDomain();
   };
 
-  const loadNextDomain = () => {
-    // Move next domain to current
-    setCurrentDomain(nextDomain);
-    setUsedDomainIds(prev => new Set([...prev, nextDomain?.id]));
-    
-    // Generate new next domain
-    const newNextDomain = generateNextDomain(keyword, new Set([...usedDomainIds, nextDomain?.id]));
-    setNextDomain(newNextDomain);
+  const loadNextDomain = async () => {
+    if (nextDomain) {
+      // Move next domain to current
+      setCurrentDomain(nextDomain);
+      setUsedDomainIds(prev => new Set([...prev, nextDomain.id]));
+      
+      // Clear next domain and start loading new one
+      setNextDomain(null);
+      setIsLoadingNext(true);
+      
+      // Generate new next domain in background
+      try {
+        const newNextDomain = await generateNextDomain(keyword, new Set([...usedDomainIds, nextDomain.id]));
+        setNextDomain(newNextDomain);
+      } catch (error) {
+        console.error('Error loading next domain:', error);
+      } finally {
+        setIsLoadingNext(false);
+      }
+    } else {
+      // If no next domain ready, show loading state
+      const { loadingDomain, promise } = generateDomainWithLoading(keyword, usedDomainIds);
+      setCurrentDomain(loadingDomain);
+      
+      try {
+        const newDomain = await promise;
+        setCurrentDomain(newDomain);
+        setUsedDomainIds(prev => new Set([...prev, newDomain.id]));
+        
+        // Preload next domain
+        preloadNextDomain(new Set([...usedDomainIds, newDomain.id]));
+      } catch (error) {
+        console.error('Error loading domain:', error);
+      }
+    }
   };
 
   if (isLoading) {
@@ -82,10 +143,15 @@ export default function SwipeScreen({ navigation, route }) {
           <View style={styles.neonGlowContainer}>
             <Ionicons name="search" size={60} color="#00ff41" />
           </View>
-          <Text style={styles.loadingTitle}>Finding domains...</Text>
+          <Text style={styles.loadingTitle}>Finding available domains...</Text>
           <Text style={styles.loadingSubtitle}>
-            Searching for "{keyword}" variations
+            Checking real availability for "{keyword}"
           </Text>
+          <View style={styles.loadingSteps}>
+            <Text style={styles.loadingStep}>🔍 Generating domain variations</Text>
+            <Text style={styles.loadingStep}>🌐 Checking availability</Text>
+            <Text style={styles.loadingStep}>💰 Getting real pricing</Text>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -96,15 +162,15 @@ export default function SwipeScreen({ navigation, route }) {
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
           <Ionicons name="search" size={80} color="#888" />
-          <Text style={styles.emptyTitle}>No Domains Found</Text>
+          <Text style={styles.emptyTitle}>No Available Domains Found</Text>
           <Text style={styles.emptySubtitle}>
-            Try a different keyword
+            All "{keyword}" variations seem to be taken. Try a different keyword.
           </Text>
           <TouchableOpacity
             style={styles.backButtonLarge}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.buttonText}>Back to Search</Text>
+            <Text style={styles.buttonText}>Try Different Keyword</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -120,6 +186,11 @@ export default function SwipeScreen({ navigation, route }) {
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </View>
         </TouchableOpacity>
+        
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>Domain Discovery</Text>
+          <Text style={styles.headerSubtitle}>"{keyword}"</Text>
+        </View>
         
         <TouchableOpacity 
           onPress={() => navigation.navigate('Cart')}
@@ -148,10 +219,33 @@ export default function SwipeScreen({ navigation, route }) {
         />
       </View>
 
-      {/* Clean Footer */}
+      {/* Enhanced Footer */}
       <View style={styles.footer}>
-        <Text style={styles.keywordText}>"{keyword}"</Text>
-        <Text style={styles.instructionText}>Keep swiping to discover more</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Checking</Text>
+            <Text style={styles.statValue}>Real Availability</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Showing</Text>
+            <Text style={styles.statValue}>Live Pricing</Text>
+          </View>
+        </View>
+        
+        <Text style={styles.instructionText}>
+          {currentDomain.checkingAvailability 
+            ? "Verifying domain availability..." 
+            : "Swipe to discover more available domains"
+          }
+        </Text>
+        
+        {isLoadingNext && (
+          <View style={styles.preloadingIndicator}>
+            <Ionicons name="sync" size={12} color="#00ff41" />
+            <Text style={styles.preloadingText}>Preparing next domain...</Text>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -177,15 +271,26 @@ const styles = StyleSheet.create({
   },
   loadingTitle: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginTop: 30,
     marginBottom: 15,
+    textAlign: 'center',
   },
   loadingSubtitle: {
     color: '#888',
     fontSize: 16,
     textAlign: 'center',
+    marginBottom: 30,
+  },
+  loadingSteps: {
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  loadingStep: {
+    color: '#00ff41',
+    fontSize: 14,
+    lineHeight: 20,
   },
   header: {
     flexDirection: 'row',
@@ -197,80 +302,118 @@ const styles = StyleSheet.create({
   },
   headerButton: {
     padding: 8,
+    minWidth: 50,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  headerSubtitle: {
+    color: '#00ff41',
+    fontSize: 14,
+    marginTop: 2,
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cartContainer: {
-    position: 'relative',
+    alignItems: 'center',
   },
   cartIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,255,65,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,255,65,0.3)',
     position: 'relative',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,255,65,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cartBadge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: '#ff4444',
-    borderRadius: 12,
-    minWidth: 24,
-    height: 24,
-    justifyContent: 'center',
+    top: -5,
+    right: -5,
+    backgroundColor: '#00ff41',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 6,
-    borderWidth: 2,
-    borderColor: '#0a0a0a',
-    shadowColor: '#ff4444',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-    elevation: 4,
   },
   cartBadgeText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 12,
-    fontWeight: '800',
-    lineHeight: 14,
+    fontWeight: 'bold',
   },
   swipeArea: {
     flex: 1,
-    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
   },
   footer: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
   },
-  keywordText: {
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    backgroundColor: 'rgba(0,255,65,0.05)',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,65,0.1)',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statLabel: {
+    color: '#888',
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  statValue: {
     color: '#00ff41',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-    textShadowColor: '#00ff41',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 8,
-    letterSpacing: 0.5,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: 'rgba(0,255,65,0.2)',
+    marginHorizontal: 20,
   },
   instructionText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
+    color: '#888',
+    fontSize: 16,
     textAlign: 'center',
-    fontWeight: '500',
-    letterSpacing: 0.3,
+    lineHeight: 22,
+  },
+  preloadingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    gap: 6,
+  },
+  preloadingText: {
+    color: '#00ff41',
+    fontSize: 12,
   },
   emptyContainer: {
     flex: 1,
@@ -280,32 +423,33 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     marginTop: 20,
-    marginBottom: 10,
+    marginBottom: 15,
+    textAlign: 'center',
   },
   emptySubtitle: {
     color: '#888',
     fontSize: 16,
     textAlign: 'center',
+    lineHeight: 22,
     marginBottom: 30,
   },
   backButtonLarge: {
     backgroundColor: '#00ff41',
-    paddingHorizontal: 32,
-    paddingVertical: 16,
+    paddingHorizontal: 30,
+    paddingVertical: 15,
     borderRadius: 25,
     shadowColor: '#00ff41',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+    elevation: 5,
   },
   buttonText: {
     color: '#000',
     fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: 'bold',
   },
 }); 

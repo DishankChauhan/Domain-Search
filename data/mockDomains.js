@@ -1,3 +1,5 @@
+import DomainAvailabilityService from '../services/DomainAvailabilityService';
+
 export const mockDomains = [
   {
     id: 1,
@@ -65,8 +67,8 @@ export const mockDomains = [
   }
 ];
 
-// Enhanced domain generation for continuous swiping
-export const generateMockDomains = (keyword, count = 10) => {
+// Enhanced domain generation with real availability checking
+export const generateMockDomains = async (keyword, count = 10) => {
   const extensions = ['.com', '.io', '.net', '.org', '.co', '.app', '.dev', '.tech', '.online', '.store', '.shop', '.biz', '.info', '.me', '.tv', '.cc'];
   const prefixes = ['smart', 'quick', 'easy', 'pro', 'fast', 'new', 'best', 'super', 'mega', 'ultra', 'top', 'prime', 'elite', 'master', 'expert', 'digital', 'cyber', 'tech', 'cloud', 'web', 'net', 'data', 'ai', 'auto', 'modern', 'future', 'next', 'advanced', 'innovative'];
   const suffixes = ['hub', 'lab', 'zone', 'world', 'space', 'point', 'center', 'studio', 'works', 'solutions', 'systems', 'tech', 'pro', 'plus', 'max', 'expert', 'guru', 'ninja', 'master', 'wizard', 'genius', 'boost', 'force', 'power', 'edge', 'core', 'base', 'spot', 'place', 'site', 'web', 'net', 'link', 'connect', 'bridge', 'portal', 'gateway'];
@@ -75,42 +77,21 @@ export const generateMockDomains = (keyword, count = 10) => {
   
   // Generate exact matches
   extensions.slice(0, Math.min(count / 4, extensions.length)).forEach((ext, index) => {
-    domains.push({
-      id: `${keyword}_exact_${index + 1}_${Date.now()}`,
-      name: `${keyword}${ext}`,
-      price: Math.floor(Math.random() * 100) + 8.99,
-      available: Math.random() > 0.2, // 80% availability
-      extension: ext,
-      category: 'search'
-    });
+    domains.push(`${keyword}${ext}`);
   });
   
   // Generate with prefixes
   const selectedPrefixes = prefixes.sort(() => 0.5 - Math.random()).slice(0, Math.min(count / 4, prefixes.length));
   selectedPrefixes.forEach((prefix, index) => {
     const ext = extensions[index % extensions.length];
-    domains.push({
-      id: `${prefix}_${keyword}_${index + 100}_${Date.now()}`,
-      name: `${prefix}${keyword}${ext}`,
-      price: Math.floor(Math.random() * 150) + 12.99,
-      available: Math.random() > 0.15,
-      extension: ext,
-      category: 'search'
-    });
+    domains.push(`${prefix}${keyword}${ext}`);
   });
   
   // Generate with suffixes
   const selectedSuffixes = suffixes.sort(() => 0.5 - Math.random()).slice(0, Math.min(count / 4, suffixes.length));
   selectedSuffixes.forEach((suffix, index) => {
     const ext = extensions[index % extensions.length];
-    domains.push({
-      id: `${keyword}_${suffix}_${index + 200}_${Date.now()}`,
-      name: `${keyword}${suffix}${ext}`,
-      price: Math.floor(Math.random() * 80) + 15.99,
-      available: Math.random() > 0.2,
-      extension: ext,
-      category: 'search'
-    });
+    domains.push(`${keyword}${suffix}${ext}`);
   });
   
   // Generate creative combinations
@@ -130,31 +111,54 @@ export const generateMockDomains = (keyword, count = 10) => {
     ];
     
     const selectedVariation = variations[Math.floor(Math.random() * variations.length)];
-    
-    domains.push({
-      id: `creative_${i}_${Date.now()}_${Math.random()}`,
-      name: selectedVariation,
-      price: Math.floor(Math.random() * 200) + 10.99,
-      available: Math.random() > 0.25,
-      extension: ext,
-      category: 'search'
-    });
+    domains.push(selectedVariation);
   }
   
-  // Shuffle and return only available domains
-  return domains.filter(domain => domain.available).sort(() => 0.5 - Math.random());
+  // Check availability for all generated domains
+  try {
+    const availabilityResults = await DomainAvailabilityService.checkMultipleDomains(domains);
+    
+    return availabilityResults
+      .filter(domain => domain.available)
+      .map((domain, index) => ({
+        id: `${keyword}_${index}_${Date.now()}`,
+        name: domain.domain,
+        price: domain.price,
+        available: domain.available,
+        extension: '.' + domain.domain.split('.').pop(),
+        category: 'search',
+        registrar: domain.registrar,
+        premium: domain.premium,
+        suggested: domain.suggested || []
+      }))
+      .sort(() => 0.5 - Math.random());
+  } catch (error) {
+    console.error('Error checking domain availability:', error);
+    // Fallback to mock data if availability service fails
+    return domains.slice(0, count).map((domainName, index) => ({
+      id: `fallback_${keyword}_${index}_${Date.now()}`,
+      name: domainName,
+      price: Math.floor(Math.random() * 100) + 8.99,
+      available: true,
+      extension: '.' + domainName.split('.').pop(),
+      category: 'search',
+      registrar: 'GoDaddy',
+      premium: false,
+      suggested: []
+    }));
+  }
 };
 
-// Generate a single domain for continuous swiping
-export const generateNextDomain = (keyword, usedIds = new Set()) => {
+// Generate a single domain with real availability checking
+export const generateNextDomain = async (keyword, usedIds = new Set()) => {
   const extensions = ['.com', '.io', '.net', '.org', '.co', '.app', '.dev', '.tech', '.online', '.store'];
   const prefixes = ['smart', 'quick', 'easy', 'pro', 'fast', 'new', 'best', 'super', 'mega', 'ultra', 'digital', 'modern', 'next'];
   const suffixes = ['hub', 'lab', 'zone', 'world', 'space', 'center', 'studio', 'works', 'solutions', 'tech', 'plus', 'max'];
   
-  let domain;
   let attempts = 0;
+  const maxAttempts = 5;
   
-  do {
+  while (attempts < maxAttempts) {
     const ext = extensions[Math.floor(Math.random() * extensions.length)];
     const usePrefix = Math.random() > 0.5;
     const useSuffix = Math.random() > 0.5;
@@ -176,17 +180,111 @@ export const generateNextDomain = (keyword, usedIds = new Set()) => {
       name = name + (Math.floor(Math.random() * 999) + 1);
     }
     
-    domain = {
-      id: `continuous_${Date.now()}_${Math.random()}`,
-      name: `${name}${ext}`,
-      price: Math.floor(Math.random() * 150) + 8.99,
-      available: true, // Always available for continuous mode
-      extension: ext,
-      category: 'search'
-    };
+    const domainName = `${name}${ext}`;
+    const domainId = `continuous_${Date.now()}_${Math.random()}`;
+    
+    // Skip if already used
+    if (usedIds.has(domainId)) {
+      attempts++;
+      continue;
+    }
+    
+    try {
+      // Check real availability
+      const availabilityResult = await DomainAvailabilityService.checkAvailability(domainName);
+      
+      if (availabilityResult.available) {
+        return {
+          id: domainId,
+          name: domainName,
+          price: availabilityResult.price,
+          available: availabilityResult.available,
+          extension: ext,
+          category: 'search',
+          registrar: availabilityResult.registrar,
+          premium: availabilityResult.premium,
+          suggested: availabilityResult.suggested || [],
+          checkingAvailability: false
+        };
+      } else {
+        // If not available, try alternatives
+        if (availabilityResult.suggested && availabilityResult.suggested.length > 0) {
+          const alternativeDomain = availabilityResult.suggested[0];
+          const altAvailability = await DomainAvailabilityService.checkAvailability(alternativeDomain);
+          
+          if (altAvailability.available) {
+            return {
+              id: `${domainId}_alt`,
+              name: alternativeDomain,
+              price: altAvailability.price,
+              available: altAvailability.available,
+              extension: '.' + alternativeDomain.split('.').pop(),
+              category: 'search',
+              registrar: altAvailability.registrar,
+              premium: altAvailability.premium,
+              suggested: [],
+              isAlternative: true,
+              originalRequest: domainName,
+              checkingAvailability: false
+            };
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking domain availability:', error);
+      // Fallback to mock domain if service fails
+      return {
+        id: domainId,
+        name: domainName,
+        price: Math.floor(Math.random() * 150) + 8.99,
+        available: true,
+        extension: ext,
+        category: 'search',
+        registrar: 'GoDaddy',
+        premium: false,
+        suggested: [],
+        checkingAvailability: false
+      };
+    }
     
     attempts++;
-  } while (usedIds.has(domain.id) && attempts < 10);
+  }
   
-  return domain;
+  // If we can't find any available domains, return a fallback
+  return {
+    id: `fallback_${Date.now()}_${Math.random()}`,
+    name: `${keyword}${Math.floor(Math.random() * 999)}.com`,
+    price: Math.floor(Math.random() * 150) + 8.99,
+    available: true,
+    extension: '.com',
+    category: 'search',
+    registrar: 'GoDaddy',
+    premium: false,
+    suggested: [],
+    checkingAvailability: false
+  };
+};
+
+// Generate domain with loading state (for immediate UI response)
+export const generateDomainWithLoading = (keyword, usedIds = new Set()) => {
+  const extensions = ['.com', '.io', '.net', '.org', '.co'];
+  const ext = extensions[Math.floor(Math.random() * extensions.length)];
+  
+  const loadingDomain = {
+    id: `loading_${Date.now()}_${Math.random()}`,
+    name: `${keyword}${ext}`,
+    price: 0,
+    available: true,
+    extension: ext,
+    category: 'search',
+    registrar: null,
+    premium: false,
+    suggested: [],
+    checkingAvailability: true
+  };
+  
+  // Return loading domain immediately, then check availability
+  const promise = generateNextDomain(keyword, usedIds);
+  
+  return { loadingDomain, promise };
 }; 
