@@ -298,4 +298,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Tech**: React Native + Solana
 - **Status**: Live and functional
 
-**Built with ❤️ for the Solana ecosystem** 
+**Built with ❤️ for the Solana ecosystem**
