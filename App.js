@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { StatusBar, View, Text, StyleSheet, Animated } from 'react-native';
+import { StatusBar, View, Text, StyleSheet, Animated, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CartProvider } from './context/CartContext';
 import { SolanaProvider } from './context/SolanaContext';
@@ -14,17 +14,19 @@ import PurchaseHistoryScreen from './screens/PurchaseHistoryScreen';
 
 const Stack = createStackNavigator();
 
-// Neon Loading Screen Component
+// Loading Screen Component with Logo.png and 3 Dots
 function LoadingScreen() {
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
-  const glowAnim = React.useRef(new Animated.Value(0)).current;
+  const dot1Anim = React.useRef(new Animated.Value(0.3)).current;
+  const dot2Anim = React.useRef(new Animated.Value(0.3)).current;
+  const dot3Anim = React.useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    // Pulse animation
+    // Logo pulse animation
     const pulseAnimation = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
-          toValue: 1.2,
+          toValue: 1.1,
           duration: 1000,
           useNativeDriver: true,
         }),
@@ -36,93 +38,79 @@ function LoadingScreen() {
       ])
     );
 
-    // Glow animation
-    const glowAnimation = Animated.loop(
+    // 3 Dots animation sequence
+    const dotsAnimation = Animated.loop(
       Animated.sequence([
-        Animated.timing(glowAnim, {
+        // Dot 1
+        Animated.timing(dot1Anim, {
           toValue: 1,
-          duration: 1500,
+          duration: 300,
           useNativeDriver: true,
         }),
-        Animated.timing(glowAnim, {
-          toValue: 0,
-          duration: 1500,
+        Animated.timing(dot1Anim, {
+          toValue: 0.3,
+          duration: 300,
           useNativeDriver: true,
         }),
+        // Dot 2
+        Animated.timing(dot2Anim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(dot2Anim, {
+          toValue: 0.3,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        // Dot 3
+        Animated.timing(dot3Anim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(dot3Anim, {
+          toValue: 0.3,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        // Pause
+        Animated.delay(400),
       ])
     );
 
     pulseAnimation.start();
-    glowAnimation.start();
+    dotsAnimation.start();
 
     return () => {
       pulseAnimation.stop();
-      glowAnimation.stop();
+      dotsAnimation.stop();
     };
   }, []);
 
   return (
     <View style={styles.loadingContainer}>
+      {/* Logo */}
       <Animated.View
         style={[
           styles.logoContainer,
           {
             transform: [{ scale: pulseAnim }],
-            opacity: glowAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0.7, 1],
-            }),
           },
         ]}
       >
-        <View style={styles.neonIconGlow}>
-          <Ionicons name="globe-outline" size={80} color="#00ff41" />
-        </View>
+        <Image 
+          source={require('./assets/logo.png')} 
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </Animated.View>
-      
-      <Text style={styles.loadingTitle}>DomainSwipe</Text>
-      <Text style={styles.loadingSubtitle}>Find your perfect domain</Text>
-      
-      <View style={styles.loadingDots}>
-        <Animated.View
-          style={[
-            styles.dot,
-            {
-              opacity: glowAnim.interpolate({
-                inputRange: [0, 0.33, 0.66, 1],
-                outputRange: [0.3, 1, 0.3, 0.3],
-              }),
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.dot,
-            {
-              opacity: glowAnim.interpolate({
-                inputRange: [0, 0.33, 0.66, 1],
-                outputRange: [0.3, 0.3, 1, 0.3],
-              }),
-            },
-          ]}
-        />
-        <Animated.View
-          style={[
-            styles.dot,
-            {
-              opacity: glowAnim.interpolate({
-                inputRange: [0, 0.33, 0.66, 1],
-                outputRange: [0.3, 0.3, 0.3, 1],
-              }),
-            },
-          ]}
-        />
-      </View>
-      
-      {/* Web3 Solana Badge */}
-      <View style={styles.web3Badge}>
-        <Ionicons name="flash" size={16} color="#00ff41" />
-        <Text style={styles.web3Text}>Powered by Solana</Text>
+
+      {/* 3 Dots Loading Animation */}
+      <View style={styles.dotsContainer}>
+        <Animated.View style={[styles.dot, { opacity: dot1Anim }]} />
+        <Animated.View style={[styles.dot, { opacity: dot2Anim }]} />
+        <Animated.View style={[styles.dot, { opacity: dot3Anim }]} />
       </View>
     </View>
   );
@@ -132,10 +120,10 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Show loader for 3 seconds
+    // Show loader for 2.5 seconds
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 3000);
+    }, 2500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -182,63 +170,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a0a0a',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
   },
   logoContainer: {
-    marginBottom: 40,
+    // No margin needed for centered logo only
   },
-  neonIconGlow: {
-    shadowColor: '#00ff41',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 25,
-    elevation: 15,
+  logo: {
+    width: 200,
+    height: 200,
   },
-  loadingTitle: {
-    color: '#fff',
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textShadowColor: '#00ff41',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 15,
-  },
-  loadingSubtitle: {
-    color: '#888',
-    fontSize: 16,
-    marginBottom: 60,
-    textAlign: 'center',
-  },
-  loadingDots: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#00ff41',
-    shadowColor: '#00ff41',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  web3Badge: {
+  dotsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,255,65,0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0,255,65,0.3)',
-    marginTop: 40,
-    gap: 6,
+    justifyContent: 'center',
+    marginTop: 20,
   },
-  web3Text: {
-    color: '#00ff41',
-    fontSize: 14,
-    fontWeight: '600',
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#00ff41',
+    marginHorizontal: 2,
   },
 }); 

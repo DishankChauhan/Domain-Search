@@ -158,14 +158,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a0a0a',
   },
   content: {
-    paddingHorizontal: 24,
-    paddingTop: 30,
+    paddingHorizontal: 20,
+    paddingTop: 20,
     paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 40,
-    paddingTop: 20,
+    marginBottom: 30,
+    paddingTop: 10,
   },
   title: {
     fontSize: 36,

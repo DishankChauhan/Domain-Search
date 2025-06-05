@@ -45,8 +45,16 @@
       "bundler": "metro",
       "cors": {
         "allowOrigins": "*",
-        "allowMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allowHeaders": ["*"]
+        "allowMethods": [
+          "GET",
+          "POST",
+          "PUT",
+          "DELETE",
+          "OPTIONS"
+        ],
+        "allowHeaders": [
+          "*"
+        ]
       }
     },
     "plugins": [
@@ -56,8 +64,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "47f00a5f-0b8a-421f-9ee8-5ec5badf0801"
+        "projectId": "e8a9a035-86a8-474b-b0e4-cb93c763cc19"
       }
-    }
+    },
+    "owner": "dishank0029"
   }
 }
