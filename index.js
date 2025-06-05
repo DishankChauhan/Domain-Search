@@ -1,4 +1,10 @@
 import { registerRootComponent } from 'expo';
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
+import { Buffer } from 'buffer';
+
+// Make Buffer available globally
+global.Buffer = Buffer;
 
 import App from './App';
 

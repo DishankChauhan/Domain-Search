@@ -4,14 +4,15 @@
     "slug": "domainswipe",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "sdkVersion": "53.0.0",
+    "scheme": "domainswipe",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a1a"
+      "backgroundColor": "#0a0a0a"
     },
     "ios": {
       "supportsTablet": true,
@@ -19,17 +20,44 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1a1a1a"
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#0a0a0a"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.domainswipe.app"
+      "package": "com.domainswipe.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "domainswipe"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/logo.png",
+      "bundler": "metro",
+      "cors": {
+        "allowOrigins": "*",
+        "allowMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allowHeaders": ["*"]
+      }
     },
     "plugins": [
-      "expo-font"
-    ]
+      "expo-font",
+      "expo-web-browser",
+      "expo-dev-client"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "47f00a5f-0b8a-421f-9ee8-5ec5badf0801"
+      }
+    }
   }
 }

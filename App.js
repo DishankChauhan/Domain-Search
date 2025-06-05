@@ -4,9 +4,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar, View, Text, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CartProvider } from './context/CartContext';
+import { SolanaProvider } from './context/SolanaContext';
 import SearchScreen from './screens/SearchScreen';
 import SwipeScreen from './screens/SwipeScreen';
 import CartScreen from './screens/CartScreen';
+import CheckoutScreen from './screens/CheckoutScreen';
+import OrderSuccessScreen from './screens/OrderSuccessScreen';
+import PurchaseHistoryScreen from './screens/PurchaseHistoryScreen';
 
 const Stack = createStackNavigator();
 
@@ -114,6 +118,12 @@ function LoadingScreen() {
           ]}
         />
       </View>
+      
+      {/* Web3 Solana Badge */}
+      <View style={styles.web3Badge}>
+        <Ionicons name="flash" size={16} color="#00ff41" />
+        <Text style={styles.web3Text}>Powered by Solana</Text>
+      </View>
     </View>
   );
 }
@@ -140,24 +150,29 @@ export default function App() {
   }
 
   return (
-    <CartProvider>
-      <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
-      <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName="Search"
-          screenOptions={{
-            headerShown: false,
-            cardStyle: { backgroundColor: '#0a0a0a' },
-            gestureEnabled: true,
-            gestureDirection: 'horizontal',
-          }}
-        >
-          <Stack.Screen name="Search" component={SearchScreen} />
-          <Stack.Screen name="Swipe" component={SwipeScreen} />
-          <Stack.Screen name="Cart" component={CartScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </CartProvider>
+    <SolanaProvider>
+      <CartProvider>
+        <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName="Search"
+            screenOptions={{
+              headerShown: false,
+              cardStyle: { backgroundColor: '#0a0a0a' },
+              gestureEnabled: true,
+              gestureDirection: 'horizontal',
+            }}
+          >
+            <Stack.Screen name="Search" component={SearchScreen} />
+            <Stack.Screen name="Swipe" component={SwipeScreen} />
+            <Stack.Screen name="Cart" component={CartScreen} />
+            <Stack.Screen name="Checkout" component={CheckoutScreen} />
+            <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
+            <Stack.Screen name="PurchaseHistory" component={PurchaseHistoryScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </CartProvider>
+    </SolanaProvider>
   );
 }
 
@@ -208,5 +223,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 10,
     elevation: 8,
+  },
+  web3Badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,255,65,0.1)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(0,255,65,0.3)',
+    marginTop: 40,
+    gap: 6,
+  },
+  web3Text: {
+    color: '#00ff41',
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 

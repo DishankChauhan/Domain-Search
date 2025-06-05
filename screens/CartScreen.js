@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,19 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
+import { useSolana } from '../context/SolanaContext';
 
 export default function CartScreen({ navigation }) {
   const { items, total, count, removeFromCart, clearCart } = useCart();
+  const { getSOLPrice, convertUSDToSOL } = useSolana();
+  
+  const [currentSOLPrice, setCurrentSOLPrice] = useState(0);
+
+  useEffect(() => {
+    // Get current SOL price when component mounts
+    const price = getSOLPrice();
+    setCurrentSOLPrice(price);
+  }, []);
 
   const handleRemoveItem = (domain) => {
     Alert.alert(
@@ -45,12 +55,11 @@ export default function CartScreen({ navigation }) {
   };
 
   const handleCheckout = () => {
-    Alert.alert(
-      '🚀 Coming Soon!',
-      'Domain purchase functionality will be available in Phase 4!\n\nFor now, enjoy collecting domains in your cart.',
-      [{ text: 'Got it!', style: 'default' }]
-    );
+    // Navigate to the new Solana checkout screen
+    navigation.navigate('Checkout');
   };
+
+  const solAmount = convertUSDToSOL(total);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,8 +106,17 @@ export default function CartScreen({ navigation }) {
               <Text style={styles.summaryValue}>{count}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Total:</Text>
+              <Text style={styles.summaryLabel}>Total (USD):</Text>
               <Text style={styles.summaryTotal}>${total.toFixed(2)}</Text>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>SOL Price:</Text>
+              <Text style={styles.summaryValue}>${currentSOLPrice.toFixed(2)}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total (SOL):</Text>
+              <Text style={styles.summaryTotalSOL}>≈ {solAmount.toFixed(4)} SOL</Text>
             </View>
           </View>
 
@@ -143,9 +161,17 @@ export default function CartScreen({ navigation }) {
               style={styles.checkoutButton}
               onPress={handleCheckout}
             >
-              <Ionicons name="card" size={20} color="#000" />
-              <Text style={styles.checkoutButtonText}>Checkout</Text>
+              <Ionicons name="flash" size={20} color="#000" />
+              <Text style={styles.checkoutButtonText}>Pay with SOL</Text>
             </TouchableOpacity>
+          </View>
+          
+          {/* Solana Info */}
+          <View style={styles.solanaInfo}>
+            <Ionicons name="information-circle-outline" size={16} color="#888" />
+            <Text style={styles.solanaInfoText}>
+              Secure payments powered by Solana blockchain (Devnet)
+            </Text>
           </View>
         </View>
       )}
@@ -249,12 +275,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   summaryTotal: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  summaryTotalSOL: {
     color: '#00ff41',
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: 'bold',
     textShadowColor: '#00ff41',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#333',
+    marginVertical: 8,
   },
   itemsList: {
     flex: 1,
@@ -327,8 +363,7 @@ const styles = StyleSheet.create({
   actionContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
-    paddingVertical: 30,
-    paddingBottom: 40,
+    paddingVertical: 20,
     gap: 12,
   },
   continueButton: {
@@ -373,4 +408,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 8,
   },
-}); 
+  solanaInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingBottom: 30,
+    gap: 6,
+  },
+  solanaInfoText: {
+    color: '#888',
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+});
