@@ -1,17 +1,21 @@
 # DomainSwipe 🚀
 *Tinder for Domains - A Solana-Powered Domain Marketplace*
 
-<div align="center">
-  <img src="./assets/logo.png" alt="DomainSwipe Logo" width="200" height="200" />
-  
-  <br><br>
-  
+  ![logo](https://github.com/user-attachments/assets/8992fa99-b851-4d10-bdf5-95a94cb4ec5d)
+
   <video width="600" controls>
     <source src="./assets/video.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
   
   *Demo video showcasing the complete DomainSwipe experience*
+
+
+
+https://github.com/user-attachments/assets/d8a48862-64ee-4173-b012-e1cc39fce334
+
+
+  
 </div>
 
 ## 🎯 The Problem
