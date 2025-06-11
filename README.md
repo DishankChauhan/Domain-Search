@@ -1,6 +1,19 @@
 # DomainSwipe 🚀
 *Tinder for Domains - A Solana-Powered Domain Marketplace*
 
+<div align="center">
+  <img src="./assets/logo.png" alt="DomainSwipe Logo" width="200" height="200" />
+  
+  <br><br>
+  
+  <video width="600" controls>
+    <source src="./assets/video.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  
+  *Demo video showcasing the complete DomainSwipe experience*
+</div>
+
 ## 🎯 The Problem
 
 Domain hunting is broken. Currently, finding the perfect domain involves:
@@ -49,6 +62,129 @@ I've built a fully functional web demo showcasing all core features. The mobile 
 - Deploy the mobile app to app stores
 - Access proper mobile wallet integration
 - Scale the infrastructure for user growth
+
+## 📱 Screenshots
+
+<div align="center">
+  <img src="./assets/1.jpg" alt="Search Screen" width="200" />
+  <img src="./assets/2.jpg" alt="Swipe Interface" width="200" />
+  <img src="./assets/3.jpg" alt="Domain Details" width="200" />
+  <img src="./assets/4.jpg" alt="Cart Screen" width="200" />
+  <img src="./assets/5.jpg" alt="Checkout Process" width="200" />
+</div>
+
+*Screenshots showcasing the complete user journey from domain search to Solana payment*
+
+## 🏗️ System Architecture
+
+### High-Level Architecture
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Mobile App    │    │    Web App      │    │   Admin Panel   │
+│  (React Native) │    │ (React Native   │    │   (Future)      │
+│                 │    │      Web)       │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │  Frontend Layer │
+                    │   (React Native │
+                    │    + Expo)      │
+                    └─────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │  State Management│
+                    │   - CartContext  │
+                    │   - SolanaContext│
+                    └─────────────────┘
+                                 │
+         ┌───────────────────────┼───────────────────────┐
+         │                       │                       │
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Wallet Layer   │    │  Domain Layer   │    │ Blockchain Layer│
+│                 │    │                 │    │                 │
+│ • Phantom       │    │ • GoDaddy API   │    │ • Solana Devnet │
+│ • Solflare      │    │ • Namecheap API │    │ • Smart Contract│
+│ • Mobile Wallet │    │ • Domain.com    │    │ • SOL Payments  │
+│   Adapter       │    │ • Real-time     │    │ • Transaction   │
+│                 │    │   Availability  │    │   History       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Data Layer    │
+                    │                 │
+                    │ • AsyncStorage  │
+                    │ • LocalStorage  │
+                    │ • Transaction   │
+                    │   History       │
+                    └─────────────────┘
+```
+
+### Payment Flow Architecture
+```
+User Wallet                 DomainSwipe                 Registrar
+┌─────────┐                ┌─────────────┐              ┌─────────┐
+│ Phantom │                │             │              │ GoDaddy │
+│ Solflare│                │    App      │              │Namecheap│
+│   etc.  │                │             │              │  etc.   │
+└─────────┘                └─────────────┘              └─────────┘
+     │                            │                           │
+     │ 1. Connect Wallet          │                           │
+     ├─────────────────────────>  │                           │
+     │                            │                           │
+     │ 2. Domain Selection        │                           │
+     │    (Swipe Right)           │                           │
+     ├─────────────────────────>  │                           │
+     │                            │                           │
+     │                            │ 3. Check Availability     │
+     │                            ├─────────────────────────> │
+     │                            │                           │
+     │                            │ 4. Price Confirmation     │
+     │                            │ <───────────────────────── │
+     │                            │                           │
+     │ 5. Payment Request         │                           │
+     │    (SOL Amount)            │                           │
+     │ <────────────────────────  │                           │
+     │                            │                           │
+     │ 6. Sign Transaction        │                           │
+     ├─────────────────────────>  │                           │
+     │                            │                           │
+     │                            │ 7. Process Registration   │
+     │                            │    (API Call)             │
+     │                            ├─────────────────────────> │
+     │                            │                           │
+     │                            │ 8. Domain Registered      │
+     │                            │ <───────────────────────── │
+     │                            │                           │
+     │ 9. Confirmation            │                           │
+     │ <────────────────────────  │                           │
+```
+
+### Data Flow
+```
+1. User Input (Keywords) 
+   ↓
+2. Domain Generation Algorithm
+   ↓
+3. Real-time Availability Check (Multiple APIs)
+   ↓
+4. Pricing Aggregation
+   ↓
+5. Swipe Interface Presentation
+   ↓
+6. Cart Management (Local Storage)
+   ↓
+7. Solana Payment Processing
+   ↓
+8. Domain Registration via APIs
+   ↓
+9. Transaction History Storage
+```
 
 ## 💰 Business Model
 

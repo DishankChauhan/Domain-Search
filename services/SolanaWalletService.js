@@ -228,8 +228,11 @@ class SolanaWalletService {
       connected: true
     };
 
-    // Save to storage
-    await AsyncStorage.setItem('connected_wallet', JSON.stringify(this.connectedWallet));
+    // Save to storage (use proper storage for mobile)
+    await AsyncStorage.setItem('connected_wallet', JSON.stringify({
+      publicKey: this.connectedWallet.publicKey,
+      walletType: this.connectedWallet.walletType
+    }));
     
     console.log('Mobile wallet connected:', this.connectedWallet.publicKey);
     return this.connectedWallet;
@@ -507,7 +510,13 @@ class SolanaWalletService {
         }
       }
 
-      await AsyncStorage.removeItem('connected_wallet');
+      // Clear storage using proper method for each platform
+      if (isWeb && typeof localStorage !== 'undefined') {
+        localStorage.removeItem('connected_wallet');
+      } else {
+        await AsyncStorage.removeItem('connected_wallet');
+      }
+      
       this.connectedWallet = null;
       console.log('Wallet disconnected');
       return true;
@@ -520,17 +529,42 @@ class SolanaWalletService {
   // Restore wallet connection from storage
   async restoreConnection() {
     try {
-      const stored = await AsyncStorage.getItem('connected_wallet');
+      let stored = null;
+      
+      // Use proper storage for each platform
+      if (isWeb && typeof localStorage !== 'undefined') {
+        stored = localStorage.getItem('connected_wallet');
+      } else {
+        stored = await AsyncStorage.getItem('connected_wallet');
+      }
+      
       if (stored) {
-        this.connectedWallet = JSON.parse(stored);
-        console.log('Wallet connection restored:', this.connectedWallet.publicKey);
+        const walletData = JSON.parse(stored);
+        console.log('🔄 Attempting to restore wallet connection:', walletData.publicKey);
+        
+        // CRITICAL: Check if this is accidentally the merchant wallet
+        if (walletData.publicKey === MERCHANT_WALLET) {
+          console.error('🚨 CRITICAL BUG: Stored wallet is merchant wallet! Clearing bad data...');
+          if (isWeb && typeof localStorage !== 'undefined') {
+            localStorage.removeItem('connected_wallet');
+          } else {
+            await AsyncStorage.removeItem('connected_wallet');
+          }
+          return null;
+        }
+        
+        this.connectedWallet = {
+          ...walletData,
+          connected: true
+        };
+        console.log('✅ Wallet connection restored:', this.connectedWallet.publicKey);
         
         // Verify the connection is still valid by checking balance
         try {
           await this.getBalance();
           return this.connectedWallet;
         } catch (error) {
-          console.log('Stored wallet connection is invalid, clearing...');
+          console.log('❌ Stored wallet connection is invalid, clearing...');
           await this.disconnect();
           return null;
         }
@@ -572,6 +606,33 @@ class SolanaWalletService {
   // Get merchant wallet address for payments
   getMerchantWallet() {
     return MERCHANT_WALLET;
+  }
+
+  // DEBUG: Clear all wallet data and force fresh connection
+  async clearAllWalletData() {
+    try {
+      console.log('🧹 Clearing ALL wallet data...');
+      
+      // Clear storage using proper method for each platform
+      if (isWeb && typeof localStorage !== 'undefined') {
+        console.log('🧹 Clearing web localStorage...');
+        localStorage.removeItem('connected_wallet');
+        localStorage.removeItem('transaction_history');
+      } else {
+        console.log('🧹 Clearing mobile AsyncStorage...');
+        await AsyncStorage.removeItem('connected_wallet');
+        await AsyncStorage.removeItem('transaction_history');
+      }
+      
+      // Clear in-memory wallet connection
+      this.connectedWallet = null;
+      
+      console.log('✅ All wallet data cleared successfully');
+      return true;
+    } catch (error) {
+      console.error('❌ Error clearing wallet data:', error);
+      throw error;
+    }
   }
 }
 
