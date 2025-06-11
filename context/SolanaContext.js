@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import SolanaWalletService from '../services/SolanaWalletService';
+import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
+import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 const SolanaContext = createContext();
 
@@ -15,61 +17,103 @@ export const SolanaProvider = ({ children }) => {
   const [wallet, setWallet] = useState(null);
   const [balance, setBalance] = useState(0);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [transactions, setTransactions] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [solPrice, setSolPrice] = useState(0);
+  const [transactions, setTransactions] = useState([]);
+
+  // Initialize connection to Solana devnet
+  const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
 
   useEffect(() => {
-    initializeService();
+    initializeSolana();
   }, []);
 
-  // Initialize the service and restore any existing connection
-  const initializeService = async () => {
+  const initializeSolana = async () => {
     try {
-      // Restore wallet connection if exists
-      const restoredWallet = await SolanaWalletService.restoreConnection();
-      if (restoredWallet) {
-        setWallet(restoredWallet);
-        await updateBalance();
-      }
-      
-      // Get initial SOL price
-      const price = SolanaWalletService.getSOLPrice();
-      setSolPrice(price);
+      // Get current SOL price
+      const currentPrice = SolanaWalletService.getSOLPrice();
+      setSolPrice(currentPrice);
       
       // Load transaction history
       const history = await SolanaWalletService.getTransactionHistory();
       setTransactions(history);
     } catch (error) {
-      console.error('Failed to initialize Solana service:', error);
+      console.error('Failed to initialize Solana:', error);
     }
   };
 
-  // Get available wallets (Phantom, Solflare)
-  const getAvailableWallets = async () => {
+  // Simplified wallet authorization for compatibility with old APK
+  const handleAuthorizeSession = async () => {
+    console.log('🔄 Attempting to authorize Mobile Wallet Adapter...');
+    
     try {
-      return await SolanaWalletService.getAvailableWallets();
+      const authResult = await transact(async (wallet) => {
+        console.log('📞 Starting wallet authorization...');
+        const authResult = await wallet.authorize({
+          cluster: 'devnet',
+          identityName: 'DomainSwipe',
+          identityUri: 'https://domainswipe.app',
+        });
+        console.log('✅ Authorization successful:', authResult);
+        return authResult;
+      });
+      
+      if (authResult) {
+        setWallet({
+          ...authResult,
+          walletType: 'Mobile Wallet Adapter'
+        });
+        await loadBalance(authResult.publicKey);
+      }
+      
+      return authResult;
     } catch (error) {
-      console.error('Failed to get available wallets:', error);
-      return [];
+      console.error('❌ Mobile Wallet Adapter authorization failed:', error);
+      throw error;
     }
   };
 
-  // Connect to a specific wallet
-  const connectWallet = async (walletType = 'phantom') => {
+  // Load wallet balance
+  const loadBalance = async (publicKeyString = null) => {
+    try {
+      const pubkey = publicKeyString || wallet?.publicKey;
+      if (!pubkey) return 0;
+      
+      const publicKey = new PublicKey(pubkey);
+      const balance = await connection.getBalance(publicKey);
+      const solBalance = balance / LAMPORTS_PER_SOL;
+      setBalance(solBalance);
+      return solBalance;
+    } catch (error) {
+      console.error('Failed to load balance:', error);
+      return 0;
+    }
+  };
+
+  // Get available wallets
+  const getAvailableWallets = async () => {
+    return SolanaWalletService.getAvailableWallets();
+  };
+
+  // Connect to wallet
+  const connectWallet = async (walletType = 'auto') => {
     setIsConnecting(true);
     try {
-      const connectedWallet = await SolanaWalletService.connectWallet(walletType);
-      if (connectedWallet) {
-        setWallet(connectedWallet);
-        await updateBalance();
-        
-        // Refresh transaction history
-        const history = await SolanaWalletService.getTransactionHistory();
-        setTransactions(history);
-        
-        return connectedWallet;
-      }
-      return null;
+      console.log('🔄 Connecting to wallet...');
+      
+      // Use SolanaWalletService which handles web vs mobile properly
+      const walletData = await SolanaWalletService.connectWallet(walletType);
+      
+      setWallet({
+        publicKey: walletData.publicKey,
+        walletType: walletData.walletType,
+        connected: true
+      });
+      
+      await loadBalance(walletData.publicKey);
+      
+      console.log('✅ Wallet connected:', walletData.publicKey);
+      return walletData;
     } catch (error) {
       console.error('Failed to connect wallet:', error);
       throw error;
@@ -78,132 +122,74 @@ export const SolanaProvider = ({ children }) => {
     }
   };
 
-  // Disconnect wallet
-  const disconnectWallet = async () => {
-    try {
-      await SolanaWalletService.disconnect();
-      setWallet(null);
-      setBalance(0);
-      return true;
-    } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
-      return false;
-    }
+  // Check if wallet is connected
+  const isConnected = () => {
+    return wallet && wallet.publicKey;
   };
 
-  // Update wallet balance
-  const updateBalance = async () => {
-    try {
-      if (wallet?.publicKey) {
-        const newBalance = await SolanaWalletService.getBalance(wallet.publicKey);
-        setBalance(newBalance);
-        return newBalance;
-      }
-      return 0;
-    } catch (error) {
-      console.error('Failed to update balance:', error);
-      return 0;
-    }
-  };
-
-  // Request SOL airdrop (devnet only)
+  // Request SOL airdrop for testing
   const requestAirdrop = async (amount = 2) => {
     try {
-      if (!wallet) throw new Error('No wallet connected');
-      
-      const result = await SolanaWalletService.requestAirdrop(wallet.publicKey, amount);
-      
-      if (result.success) {
-        // Update balance after airdrop
-        setTimeout(async () => {
-          await updateBalance();
-        }, 2000); // Wait 2 seconds for transaction to process
+      if (!wallet?.publicKey) {
+        throw new Error('No wallet connected');
       }
       
-      return result;
+      const publicKey = new PublicKey(wallet.publicKey);
+      const signature = await connection.requestAirdrop(
+        publicKey, 
+        amount * LAMPORTS_PER_SOL
+      );
+      
+      await connection.confirmTransaction(signature, 'confirmed');
+      await loadBalance();
+      
+      return signature;
     } catch (error) {
       console.error('Airdrop failed:', error);
       throw error;
     }
   };
 
-  // Process payment
-  const processPayment = async (domains, usdAmount) => {
+  // Process payment transaction - REAL SOLANA PAYMENTS
+  const processPayment = async (items, totalUSD) => {
+    if (!wallet?.publicKey) {
+      throw new Error('No wallet connected');
+    }
+
+    const amountSOL = convertUSDToSOL(totalUSD);
+    const merchantWalletAddress = SolanaWalletService.getMerchantWallet();
+    
+    console.log(`💰 Processing REAL payment of ${amountSOL} SOL ($${totalUSD})`);
+    
     try {
-      if (!wallet) throw new Error('No wallet connected');
-      
-      // Get current SOL price
-      const currentPrice = SolanaWalletService.getSOLPrice();
-      setSolPrice(currentPrice);
-      
-      // Convert USD to SOL
-      const solAmount = SolanaWalletService.convertUSDToSOL(usdAmount);
-      
-      // Check if user has sufficient balance
-      const currentBalance = await updateBalance();
-      if (currentBalance < solAmount) {
-        throw new Error('Insufficient SOL balance');
-      }
-      
-      // Send payment to the merchant wallet
-      const merchantWallet = SolanaWalletService.getMerchantWallet();
-      
-      const transaction = await SolanaWalletService.sendPayment(
-        merchantWallet,
-        solAmount,
-        domains
+      // Use SolanaWalletService which handles web vs mobile payments properly
+      const transactionData = await SolanaWalletService.sendPayment(
+        merchantWalletAddress,
+        amountSOL,
+        items
       );
       
-      // Update local state
-      await updateBalance();
+      console.log(`✅ Payment confirmed! Signature: ${transactionData.signature}`);
+
+      await loadBalance();
+
+      // Update transaction history
       const updatedHistory = await SolanaWalletService.getTransactionHistory();
       setTransactions(updatedHistory);
-      
-      return transaction;
+
+      return transactionData;
     } catch (error) {
-      console.error('Payment failed:', error);
+      console.error('❌ Payment failed:', error);
       throw error;
     }
   };
 
-  // Get transaction history
-  const getTransactionHistory = async () => {
-    try {
-      const history = await SolanaWalletService.getTransactionHistory();
-      setTransactions(history);
-      return history;
-    } catch (error) {
-      console.error('Failed to get transaction history:', error);
-      return [];
-    }
+  // Update wallet balance
+  const updateBalance = async () => {
+    return await loadBalance();
   };
 
-  // Get purchased domains
-  const getPurchasedDomains = async () => {
-    try {
-      return await SolanaWalletService.getPurchasedDomains();
-    } catch (error) {
-      console.error('Failed to get purchased domains:', error);
-      return [];
-    }
-  };
-
-  // Open transaction in explorer
-  const openTransactionInExplorer = async (signature) => {
-    try {
-      return await SolanaWalletService.openTransactionInExplorer(signature);
-    } catch (error) {
-      console.error('Failed to open transaction in explorer:', error);
-      throw error;
-    }
-  };
-
-  // Format wallet address
-  const formatAddress = (address, chars = 4) => {
-    return SolanaWalletService.formatAddress(address, chars);
-  };
-
-  // Get current SOL price
+  // Get SOL price
   const getSOLPrice = () => {
     return SolanaWalletService.getSOLPrice();
   };
@@ -213,37 +199,39 @@ export const SolanaProvider = ({ children }) => {
     return SolanaWalletService.convertUSDToSOL(usdAmount);
   };
 
-  // Check if wallet is connected
-  const isConnected = () => {
-    return SolanaWalletService.isConnected();
+  // Format wallet address for display
+  const formatAddress = (address, chars = 4) => {
+    return SolanaWalletService.formatAddress(address, chars);
+  };
+
+  // Open transaction in explorer
+  const openTransactionInExplorer = (signature) => {
+    return SolanaWalletService.openTransactionInExplorer(signature);
+  };
+
+  // Get purchased domains
+  const getPurchasedDomains = async () => {
+    return await SolanaWalletService.getPurchasedDomains();
   };
 
   const value = {
-    // Wallet state
     wallet,
     balance,
     isConnecting,
-    transactions,
+    isProcessing,
     solPrice,
-    
-    // Wallet operations
+    transactions,
     getAvailableWallets,
     connectWallet,
-    disconnectWallet,
-    updateBalance,
-    
-    // Transaction operations
-    processPayment,
+    isConnected,
     requestAirdrop,
-    getTransactionHistory,
-    getPurchasedDomains,
-    openTransactionInExplorer,
-    
-    // Utility functions
-    formatAddress,
+    processPayment,
+    updateBalance,
     getSOLPrice,
     convertUSDToSOL,
-    isConnected,
+    formatAddress,
+    openTransactionInExplorer,
+    getPurchasedDomains,
   };
 
   return (

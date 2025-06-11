@@ -6,7 +6,8 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
@@ -25,33 +26,51 @@ export default function CartScreen({ navigation }) {
   }, []);
 
   const handleRemoveItem = (domain) => {
-    Alert.alert(
-      'Remove Domain',
-      `Remove ${domain.name} from cart?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Remove', 
-          style: 'destructive',
-          onPress: () => removeFromCart(domain.id)
-        }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      // For web, use window.confirm instead of Alert
+      const confirmed = window.confirm(`Remove ${domain.name} from cart?`);
+      if (confirmed) {
+        removeFromCart(domain.id);
+      }
+    } else {
+      // For mobile, use Alert
+      Alert.alert(
+        'Remove Domain',
+        `Remove ${domain.name} from cart?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Remove', 
+            style: 'destructive',
+            onPress: () => removeFromCart(domain.id)
+          }
+        ]
+      );
+    }
   };
 
   const handleClearCart = () => {
-    Alert.alert(
-      'Clear Cart',
-      'Remove all domains from cart?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Clear All', 
-          style: 'destructive',
-          onPress: clearCart
-        }
-      ]
-    );
+    if (Platform.OS === 'web') {
+      // For web, use window.confirm instead of Alert
+      const confirmed = window.confirm('Remove all domains from cart?');
+      if (confirmed) {
+        clearCart();
+      }
+    } else {
+      // For mobile, use Alert
+      Alert.alert(
+        'Clear Cart',
+        'Remove all domains from cart?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Clear All', 
+            style: 'destructive',
+            onPress: clearCart
+          }
+        ]
+      );
+    }
   };
 
   const handleCheckout = () => {
@@ -183,6 +202,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0a0a0a',
+    ...(Platform.OS === 'web' && {
+      height: '100vh',
+      width: '100vw',
+      maxWidth: '100vw',
+      overflow: 'auto',
+      WebkitOverflowScrolling: 'touch',
+    }),
   },
   header: {
     flexDirection: 'row',

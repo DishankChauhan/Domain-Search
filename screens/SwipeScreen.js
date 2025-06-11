@@ -17,7 +17,7 @@ import { generateNextDomain, generateDomainWithLoading } from '../data/mockDomai
 const { height } = Dimensions.get('window');
 
 export default function SwipeScreen({ navigation, route }) {
-  const { keyword = '', startContinuousMode = false } = route.params || {};
+  const { keyword = 'awesome', startContinuousMode = true } = route.params || {};
   const [currentDomain, setCurrentDomain] = useState(null);
   const [nextDomain, setNextDomain] = useState(null);
   const [usedDomainIds, setUsedDomainIds] = useState(new Set());
@@ -25,36 +25,18 @@ export default function SwipeScreen({ navigation, route }) {
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const { addToCart, count, isInCart } = useCart();
 
-  // Initialize first domains
+  // Initialize domains immediately on component mount
   useEffect(() => {
-    if (keyword && startContinuousMode) {
-      loadInitialDomains();
-    }
-  }, [keyword, startContinuousMode]);
+    loadInitialDomains();
+  }, []);
 
   const loadInitialDomains = async () => {
     setIsLoading(true);
     
     try {
-      // Generate first domain with loading state
-      const { loadingDomain, promise } = generateDomainWithLoading(keyword, usedDomainIds);
-      
-      // Show loading domain immediately
-      setCurrentDomain(loadingDomain);
-      
-      // Wait for real domain data
-      const firstDomain = await promise;
-      setCurrentDomain(firstDomain);
-      setUsedDomainIds(prev => new Set([...prev, firstDomain.id]));
-      
-      // Preload next domain in background
-      preloadNextDomain(new Set([...usedDomainIds, firstDomain.id]));
-      
-    } catch (error) {
-      console.error('Error loading initial domains:', error);
-      // Fallback to simple domain
+      // Generate first domain quickly without waiting for real API calls
       const fallbackDomain = {
-        id: `fallback_${Date.now()}`,
+        id: `initial_${Date.now()}`,
         name: `${keyword}.com`,
         price: 12.99,
         available: true,
@@ -65,7 +47,15 @@ export default function SwipeScreen({ navigation, route }) {
         suggested: [],
         checkingAvailability: false
       };
+      
       setCurrentDomain(fallbackDomain);
+      setUsedDomainIds(prev => new Set([...prev, fallbackDomain.id]));
+      
+      // Preload next domain in background
+      preloadNextDomain(new Set([...usedDomainIds, fallbackDomain.id]));
+      
+    } catch (error) {
+      console.error('Error loading initial domains:', error);
     } finally {
       setIsLoading(false);
     }
@@ -258,8 +248,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a0a0a',
     ...(Platform.OS === 'web' && {
       height: '100vh',
+      width: '100vw',
       overflowY: 'auto',
       overflowX: 'hidden',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
     }),
   },
   loadingContainer: {
@@ -367,11 +363,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
     position: 'relative',
+    backgroundColor: '#0a0a0a',
     ...(Platform.OS === 'web' && {
-      WebkitOverflowScrolling: 'touch',
+      width: '100%',
       maxWidth: '100vw',
+      height: 'auto',
+      minHeight: 'calc(100vh - 200px)',
       display: 'flex',
-      overflowX: 'hidden',
+      justifyContent: 'center',
+      alignItems: 'center',
+      overflow: 'hidden',
+      WebkitOverflowScrolling: 'touch',
     }),
   },
   footer: {

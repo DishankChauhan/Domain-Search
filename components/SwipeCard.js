@@ -314,6 +314,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    backgroundColor: 'transparent',
+    overflow: 'hidden',
   },
   gradientBackground: {
     position: 'absolute',

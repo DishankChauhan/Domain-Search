@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { StatusBar, View, Text, StyleSheet, Animated, Image } from 'react-native';
+import { StatusBar, View, Text, StyleSheet, Animated, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CartProvider } from './context/CartContext';
 import { SolanaProvider } from './context/SolanaContext';
@@ -11,6 +11,7 @@ import CartScreen from './screens/CartScreen';
 import CheckoutScreen from './screens/CheckoutScreen';
 import OrderSuccessScreen from './screens/OrderSuccessScreen';
 import PurchaseHistoryScreen from './screens/PurchaseHistoryScreen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const Stack = createStackNavigator();
 
@@ -138,29 +139,32 @@ export default function App() {
   }
 
   return (
-    <SolanaProvider>
-      <CartProvider>
-        <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
-        <NavigationContainer>
-          <Stack.Navigator
-            initialRouteName="Search"
-            screenOptions={{
-              headerShown: false,
-              cardStyle: { backgroundColor: '#0a0a0a' },
-              gestureEnabled: true,
-              gestureDirection: 'horizontal',
-            }}
-          >
-            <Stack.Screen name="Search" component={SearchScreen} />
-            <Stack.Screen name="Swipe" component={SwipeScreen} />
-            <Stack.Screen name="Cart" component={CartScreen} />
-            <Stack.Screen name="Checkout" component={CheckoutScreen} />
-            <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
-            <Stack.Screen name="PurchaseHistory" component={PurchaseHistoryScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </CartProvider>
-    </SolanaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SolanaProvider>
+        <CartProvider>
+          <StatusBar 
+            barStyle={Platform.OS === 'ios' ? 'light-content' : 'light-content'}
+            backgroundColor="#0a0a0a"
+          />
+          <NavigationContainer>
+            <Stack.Navigator
+              screenOptions={{
+                headerShown: false,
+                cardStyle: { backgroundColor: '#0a0a0a' },
+              }}
+              initialRouteName="Search"
+            >
+              <Stack.Screen name="Search" component={SearchScreen} />
+              <Stack.Screen name="Swipe" component={SwipeScreen} />
+              <Stack.Screen name="Cart" component={CartScreen} />
+              <Stack.Screen name="Checkout" component={CheckoutScreen} />
+              <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
+              <Stack.Screen name="PurchaseHistory" component={PurchaseHistoryScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </CartProvider>
+      </SolanaProvider>
+    </GestureHandlerRootView>
   );
 }
 

@@ -35,6 +35,9 @@
           "data": [
             {
               "scheme": "domainswipe"
+            },
+            {
+              "scheme": "com.domainswipe.app"
             }
           ],
           "category": [
@@ -47,6 +50,20 @@
           "data": [
             {
               "scheme": "solana-wallet"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "domainswipe.app"
             }
           ],
           "category": [
@@ -83,6 +100,12 @@
         "projectId": "e8a9a035-86a8-474b-b0e4-cb93c763cc19"
       }
     },
-    "owner": "dishank0029"
+    "owner": "dishank0029",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e8a9a035-86a8-474b-b0e4-cb93c763cc19"
+    }
   }
 }

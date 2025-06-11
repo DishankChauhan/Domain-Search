@@ -14,7 +14,8 @@
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug",
         "ndk": "26.3.11579264"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -24,7 +25,8 @@
       "android": {
         "buildType": "apk",
         "ndk": "26.3.11579264"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "autoIncrement": true,
@@ -37,7 +39,8 @@
         "env": {
           "NODE_ENV": "production"
         }
-      }
+      },
+      "channel": "production"
     },
     "release": {
       "autoIncrement": true,
@@ -51,7 +54,8 @@
         "env": {
           "NODE_ENV": "production"
         }
-      }
+      },
+      "channel": "release"
     }
   },
   "submit": {

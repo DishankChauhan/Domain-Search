@@ -24,13 +24,23 @@ class SolanaWalletService {
   constructor() {
     this.connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
     this.connectedWallet = null;
-    this.currentSOLPrice = 0;
+    this.currentSOLPrice = 100; // Default fallback price
     
-    // Initialize price fetching
-    this.fetchSOLPrice();
-    
-    // Set up periodic price updates (every 5 minutes)
-    setInterval(() => this.fetchSOLPrice(), 5 * 60 * 1000);
+    // Initialize price fetching in background (non-blocking)
+    this.initializePriceFetching();
+  }
+
+  // Non-blocking initialization of price fetching
+  async initializePriceFetching() {
+    try {
+      // Fetch price in background without blocking constructor
+      await this.fetchSOLPrice();
+      
+      // Set up periodic price updates (every 5 minutes)
+      setInterval(() => this.fetchSOLPrice(), 5 * 60 * 1000);
+    } catch (error) {
+      console.log('Price fetching will continue in background');
+    }
   }
 
   // Fetch real SOL price from CoinGecko API
@@ -148,16 +158,29 @@ class SolanaWalletService {
       throw new Error('No Solana wallet found. Please install Phantom or Solflare browser extension.');
     }
 
+    console.log('🔍 Attempting to connect to wallet:', wallet.isPhantom ? 'Phantom' : 'Unknown');
+
     // Connect to wallet
     const response = await wallet.connect();
+    
+    console.log('📡 Wallet connect response:', response);
+    console.log('🔑 Public key from wallet:', response.publicKey?.toString());
     
     if (!response.publicKey) {
       throw new Error('Failed to connect to wallet');
     }
 
+    const actualWalletAddress = response.publicKey.toString();
+    console.log('✅ ACTUAL wallet address from Phantom:', actualWalletAddress);
+    console.log('❌ Merchant wallet (should NOT be the same):', MERCHANT_WALLET);
+    
+    if (actualWalletAddress === MERCHANT_WALLET) {
+      console.error('🚨 ERROR: Connected wallet is the merchant wallet! This should not happen!');
+    }
+
     // Store the wallet connection
     this.connectedWallet = {
-      publicKey: response.publicKey.toString(),
+      publicKey: actualWalletAddress,
       wallet: wallet,
       walletType: wallet.isPhantom ? 'phantom' : (wallet.isSolflare ? 'solflare' : 'unknown'),
       connected: true
@@ -218,11 +241,17 @@ class SolanaWalletService {
       const walletAddress = publicKey || this.connectedWallet?.publicKey;
       if (!walletAddress) throw new Error('No wallet connected');
 
+      console.log('💰 Checking balance for wallet:', walletAddress);
+      console.log('🏪 Merchant wallet (for reference):', MERCHANT_WALLET);
+      console.log('🔍 Is this the merchant wallet?', walletAddress === MERCHANT_WALLET);
+
       const publicKeyObj = new PublicKey(walletAddress);
       const balanceInLamports = await this.connection.getBalance(publicKeyObj);
       const balanceInSOL = balanceInLamports / LAMPORTS_PER_SOL;
       
-      console.log(`Real balance for ${walletAddress}: ${balanceInSOL} SOL`);
+      console.log(`💎 Real balance for ${walletAddress}: ${balanceInSOL} SOL`);
+      console.log(`📊 Balance in lamports: ${balanceInLamports}`);
+      
       return balanceInSOL;
     } catch (error) {
       console.error('Error fetching real balance:', error);
