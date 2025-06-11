@@ -230,7 +230,11 @@ export default function SwipeCard({ domain, onSwipeLeft, onSwipeRight }) {
       />
       
       <Animated.View
-        style={[styles.card, getCardStyle()]}
+        style={[
+          styles.card, 
+          getCardStyle(),
+          { position: 'absolute' }
+        ]}
         {...panResponder.panHandlers}
       >
         {/* Swipe Overlays */}
@@ -305,9 +309,11 @@ export default function SwipeCard({ domain, onSwipeLeft, onSwipeRight }) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   gradientBackground: {
     position: 'absolute',
@@ -316,6 +322,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: 20,
+    zIndex: 0,
   },
   card: {
     width: CARD_WIDTH,
@@ -331,6 +338,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
     position: 'relative',
+    zIndex: 1,
   },
   loadingCard: {
     justifyContent: 'center',

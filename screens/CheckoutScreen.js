@@ -433,7 +433,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0a0a0a',
     ...(Platform.OS === 'web' && {
       height: '100vh',
-      overflow: 'hidden',
+      overflowY: 'auto',
+      overflowX: 'hidden',
       display: 'flex',
       flexDirection: 'column',
     }),

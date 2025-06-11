@@ -25,12 +25,28 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.domainswipe.app",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ],
       "intentFilters": [
         {
           "action": "VIEW",
           "data": [
             {
               "scheme": "domainswipe"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "solana-wallet"
             }
           ],
           "category": [

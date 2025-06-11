@@ -6,7 +6,8 @@ import {
   StyleSheet,
   SafeAreaView,
   Vibration,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useCart } from '../context/CartContext';
@@ -255,6 +256,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0a0a0a',
+    ...(Platform.OS === 'web' && {
+      height: '100vh',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+    }),
   },
   loadingContainer: {
     flex: 1,
@@ -360,6 +366,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
+    position: 'relative',
+    ...(Platform.OS === 'web' && {
+      WebkitOverflowScrolling: 'touch',
+      maxWidth: '100vw',
+      display: 'flex',
+      overflowX: 'hidden',
+    }),
   },
   footer: {
     paddingHorizontal: 20,

@@ -32,8 +32,25 @@
         "resourceClass": "m-medium"
       },
       "android": {
+        "buildType": "apk",
+        "ndk": "26.3.11579264",
+        "env": {
+          "NODE_ENV": "production"
+        }
+      }
+    },
+    "release": {
+      "autoIncrement": true,
+      "ios": {
+        "resourceClass": "m-medium",
+        "distribution": "store"
+      },
+      "android": {
         "buildType": "app-bundle",
-        "ndk": "26.3.11579264"
+        "ndk": "26.3.11579264",
+        "env": {
+          "NODE_ENV": "production"
+        }
       }
     }
   },

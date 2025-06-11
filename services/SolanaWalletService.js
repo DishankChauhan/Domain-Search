@@ -184,8 +184,8 @@ class SolanaWalletService {
         cluster: 'devnet',
         identity: {
           name: 'DomainSwipe',
-          uri: 'https://domainswipe.app',
-          icon: 'https://domainswipe.app/icon.png'
+          uri: 'com.domainswipe.app://domainswipe',
+          icon: 'favicon.ico' // Use relative path for bundled icon
         }
       });
 
@@ -347,8 +347,8 @@ class SolanaWalletService {
         auth_token: this.connectedWallet.authToken,
         identity: {
           name: 'DomainSwipe',
-          uri: 'https://domainswipe.app',
-          icon: 'https://domainswipe.app/icon.png'
+          uri: 'com.domainswipe.app://domainswipe',
+          icon: 'favicon.ico' // Use relative path for bundled icon
         }
       });
 
